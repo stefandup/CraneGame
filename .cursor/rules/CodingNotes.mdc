@@ -1,0 +1,102 @@
+# Coding Notes - Lessons Learned
+
+## String Matching: Use Exact Equality, Not Contains
+
+### Problem
+When filtering categorical data with string values, using `str.contains()` can cause false matches due to substring relationships.
+
+### Example Bug
+```python
+# BUGGY: "NonSlipTrial" contains "SlipTrial", causing false matches
+slip_trials = df[df['TrialType'].str.contains('SlipTrial', case=False)]
+# This would incorrectly match both "SlipTrial" AND "NonSlipTrial"
+```
+
+### Solution
+Use exact equality (`==`) when the data structure uses well-defined, constant categorical values:
+
+```python
+# CORRECT: Exact matching prevents substring bugs
+trial_type_str = df['TrialType'].astype(str)
+slip_trials = df[trial_type_str == 'SlipTrial']
+non_slip_trials = df[trial_type_str == 'NonSlipTrial']
+```
+
+### When to Use Each Approach
+- **Use `==` (exact equality)** when:
+  - Data has well-defined categorical values (e.g., "SlipTrial", "NonSlipTrial", "StressBlock", "NonStressBlock")
+  - Column names or values are documented as constant
+  - You need precise matching without substring ambiguity
+  
+- **Use `contains()`** when:
+  - Searching for partial matches in free-form text
+  - Pattern matching where exact values are unknown
+  - Case-insensitive search is needed but exact values vary
+
+### Related Patterns
+Similar issues occur with:
+- "NonStressBlock" containing "StressBlock"
+- Any "NonX" pattern containing "X"
+- Prefix/suffix relationships in categorical data
+
+## Column Detection Best Practices
+
+### Problem
+Initial column detection used overly complex fallback logic that could match incorrect columns.
+
+### Solution
+When column names are constant and documented:
+1. Use exact column name matching first
+2. Only add fallbacks if truly necessary
+3. Prefer explicit column names over pattern matching
+
+```python
+# PREFERRED: Direct, exact matching
+trial_type_col = next((col for col in df.columns if col.lower() == 'trialtype'), None)
+
+# AVOID: Overly complex pattern matching when values are constant
+trial_type_col = next((col for col in df.columns if 'trialtype' in col.lower() or 'blocktype' in col.lower()), None)
+```
+
+## Data Structure Understanding
+
+### Lesson
+Always verify the actual data structure and exact values before writing filtering logic:
+- Check actual column names after cleaning
+- Verify exact categorical values (not just patterns)
+- Understand relationships between columns (e.g., TotalDropped should equal sum of all slip columns)
+
+### Practice
+1. Load and inspect data first
+2. Print column names and sample values
+3. Verify assumptions about data structure
+4. Document constant values in data descriptors
+
+## Code Clarity
+
+### Principle
+When data structure is well-defined, code should be straightforward and explicit:
+- Use exact matches instead of complex pattern matching
+- Make assumptions explicit in code
+- Prefer simple, readable logic over clever solutions
+
+### Example
+```python
+# CLEAR: Explicit, easy to understand
+block_type_str = df[block_type_col].astype(str)
+stress_blocks = df[block_type_str == 'StressBlock']
+non_stress_blocks = df[block_type_str == 'NonStressBlock']
+
+# CONFUSING: Implicit assumptions, harder to debug
+stress_blocks = df[df[block_type_col].str.contains('StressBlock', case=False) & 
+                     ~df[block_type_col].str.contains('NonStressBlock', case=False)]
+```
+
+## Summary
+
+Key takeaways:
+1. **Exact equality (`==`) over `contains()`** for categorical data with well-defined values
+2. **Verify data structure** before writing filtering logic
+3. **Prefer explicit over implicit** when values are constant
+4. **Document assumptions** about data structure and column values
+5. **Test edge cases** - substring relationships can cause subtle bugs

@@ -1,0 +1,16 @@
+# Environment Setup Reminders
+
+## Shell Environment
+- **Shell**: PowerShell (Windows)
+- **Command chaining**: Use semicolon (`;`) instead of `&&` for command separation
+  - Example: `cd path; python script.py`
+
+## Python Virtual Environment
+- **Location**: `crane/` directory in workspace root
+- **Activation**: `crane\Scripts\Activate.ps1` (PowerShell)
+- **Python interpreter**: `crane\Scripts\python.exe`
+
+## Notes
+- Always activate the venv before running Python scripts
+- Use PowerShell-compatible syntax for terminal commands
+- The workspace path contains spaces: `C:\Users\stefan\Documents\Unreal Projects\UnrealPythonTools\CraneGame`

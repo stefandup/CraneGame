@@ -1,0 +1,57 @@
+# Crane Game Log File Data Descriptor
+
+## File Format
+- **Format**: Excel (.xlsx)
+- **Location**: `logs/` directory
+- **Naming Pattern**: `YYYYMMDDHHMM_TEST_CraneOut.xlsx`
+
+## Data Structure
+
+### Overview
+The log file contains behavioral trial data from crane game experiment for *one individual subject*. Each row represents a single trial event or measurement.
+
+### Key Columns
+
+#### Trial Identification
+- **TrialNr** (integer): Trial number identifier, ranging from 1 through 12
+  - Each trial represents a distinct behavioral trial in the experiment
+  - Trials are numbered sequentially
+
+#### Temporal Data
+- **Time** (float, seconds): Start time of the trial event
+  - Measured in seconds from experiment start
+  - Used to calculate trial duration and inter-trial intervals
+  - Can be converted to minutes by dividing by 60
+
+#### Trial Characteristics
+- **BlockType** (string/categorical): Type or category of the trial block
+  - Describes the experimental condition or block configuration for each trial
+- **TrialType** (string/categorical): Classification of trial type (e.g., "Slip", "Non-Slip")
+  - Used to distinguish between slip trials and non-slip trials
+
+#### Slip Count Columns
+The following column names are **constant** and should be used for slip analysis:
+- **NrErrorSlips** (integer): Count of error-related slips
+- **NrSlips** (integer): Total count of slips
+- **NrOtherSlips** (integer): Count of other types of slips
+- **NrNoReasonSlips** (integer): Count of slips with no reason recorded
+- **NrForcedSlips** (integer): Count of forced slips
+
+**Note**: All slip-related columns contain "slip" in their name (case-insensitive) and should be summed together when calculating total slips per trial type.
+
+### Data Characteristics
+
+#### Temporal Analysis
+- **Total Duration**: Maximum `Time` value represents total experiment duration
+- **Inter-trial Intervals**: Time differences between consecutive rows (calculated via `df['Time'].diff()`)
+  - Useful for analyzing pacing and timing between trial events
+
+#### Data Quality
+- May contain empty/null values (check with `df.isnull().sum()`)
+- Column names may require cleaning (leading/trailing spaces, special characters)
+
+### Usage Notes
+- **Column names are constant** across all log files. Slip-related columns (NrErrorSlips, NrSlips, NrOtherSlips, NrNoReasonSlips, NrForcedSlips) and trial classification columns (TrialType, BlockType) maintain consistent naming.
+- When importing, clean column names to handle whitespace and special characters
+- Time values are in seconds; convert to minutes for human-readable display
+- Each row typically represents one trial event, with 12 trials per experiment session
