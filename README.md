@@ -6,6 +6,8 @@ A Python script to validate and check Crane Game log files (Excel or CSV format)
 
 ### 1. Clone the Repository
 
+**💡 Recommendation:** It's recommended to clone git repositories in a directory that is easy to find, such as your Windows home directory (`C:\Users\<yourusername>`) or a dedicated projects folder within it. This makes it easier to locate and manage your repositories.
+
 Open **PowerShell** and navigate to your Windows home directory:
 
 ```powershell
