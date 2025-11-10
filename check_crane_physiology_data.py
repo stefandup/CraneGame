@@ -4,12 +4,15 @@ import matplotlib.pyplot as plt
 from IPython import display
 import neurokit2 as nk
 import os
+import sys
 
 
 def main(mat_file=r"example_data\02032000.mat"):
-    # If mat_file is a relative path, convert it to absolute
+    # If mat_file is a relative path, resolve it relative to the script's directory
     if not os.path.isabs(mat_file):
-        mat_file = os.path.abspath(mat_file)
+        file_dir = os.getcwd()
+        mat_file = os.path.join(file_dir, mat_file)
+        mat_file = os.path.abspath(mat_file)  # Normalize the path
     
     if not os.path.exists(mat_file):
         print(f"Error: File not found: {mat_file}")
@@ -133,4 +136,7 @@ def main(mat_file=r"example_data\02032000.mat"):
 
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) > 1:
+        main(sys.argv[1])
+    else:
+        main()

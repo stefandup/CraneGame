@@ -1,6 +1,7 @@
 import pandas as pd
 from IPython.display import display
 import os
+import sys
 from colorama import Fore, Style, init
 init()
 
@@ -171,10 +172,11 @@ def check_stress_dropped(df):
     return result
 
 def main(FILE_PATH = r"C:\Users\stefan\Documents\Unreal Projects\UnrealPythonTools\CraneGame\logs\20251181420_TEST_CraneOut.xlsx"): 
-    # If FILE_PATH is a relative path, convert it to absolute
-    
+    # If FILE_PATH is a relative path, resolve it relative to the current working directory
     if not os.path.isabs(FILE_PATH):
-        FILE_PATH = os.path.abspath(FILE_PATH)
+        file_dir = os.getcwd()
+        FILE_PATH = os.path.join(file_dir, FILE_PATH)
+        FILE_PATH = os.path.abspath(FILE_PATH)  # Normalize the path
     
     if not os.path.exists(FILE_PATH):
         print(f"Error: File not found: {FILE_PATH}")
@@ -208,4 +210,7 @@ def main(FILE_PATH = r"C:\Users\stefan\Documents\Unreal Projects\UnrealPythonToo
     print(divider)
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) > 1:
+        main(sys.argv[1])
+    else:
+        main()
