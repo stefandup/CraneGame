@@ -53,7 +53,7 @@ The project includes a virtual environment in the `crane` directory. Activate it
 
 If you need to install dependencies manually:
 ```powershell
-pip install pandas openpyxl colorama IPython
+pip install pandas openpyxl colorama IPython scipy numpy matplotlib neurokit2
 ```
 
 ## Usage
