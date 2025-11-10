@@ -5,9 +5,11 @@ from IPython import display
 import neurokit2 as nk
 import os
 import sys
+from colorama import Fore, Style, init
+init()
 
 
-def main(mat_file=r"example_data\02032000.mat"):
+def main(mat_file=r"C:\Users\stefan\Documents\Unreal Projects\UnrealPythonTools\CraneGame\example_data\02032000.mat"):
     # If mat_file is a relative path, resolve it relative to the script's directory
     if not os.path.isabs(mat_file):
         file_dir = os.getcwd()
@@ -15,7 +17,7 @@ def main(mat_file=r"example_data\02032000.mat"):
         mat_file = os.path.abspath(mat_file)  # Normalize the path
     
     if not os.path.exists(mat_file):
-        print(f"Error: File not found: {mat_file}")
+        print(Fore.RED + f"Error: File not found: {mat_file}" + Style.RESET_ALL)
         return
     
     # --- Load file ---
@@ -42,7 +44,7 @@ def main(mat_file=r"example_data\02032000.mat"):
         isi_seconds = isi / 1000000.0
     else:
         isi_seconds = isi  # Assume seconds if unknown
-        print(f"Warning: Unknown ISI unit '{isi_units}', assuming seconds")
+        print(Fore.RED + f"Warning: Unknown ISI unit '{isi_units}', assuming seconds" + Style.RESET_ALL)
 
     # Calculate sampling frequency (Hz)
     sampling_frequency = 1.0 / isi_seconds
@@ -80,59 +82,126 @@ def main(mat_file=r"example_data\02032000.mat"):
 
     # --- NeuroKit2 preprocessing ---
     # EDA: tonic and phasic
-    eda_signals, eda_info = nk.eda_process(eda, sampling_rate=sampling_frequency)
-    avg_tonic = np.mean(eda_signals["EDA_Tonic"])
-    avg_phasic = np.mean(eda_signals["EDA_Phasic"])
+    if eda is not None:
+        try:
+            eda_signals, eda_info = nk.eda_process(eda, sampling_rate=sampling_frequency)
+            avg_tonic = np.mean(eda_signals["EDA_Tonic"])
+            avg_phasic = np.mean(eda_signals["EDA_Phasic"])
 
-    # Phasic peaks: count detected SCR peaks
-    num_peaks = np.sum(eda_signals["SCR_Peaks"] == 1)
-    print(f"\nEDA - Average Tonic: {avg_tonic:.4f} {eda_unit}, Average Phasic: {avg_phasic:.4f} {eda_unit}")
-    print(f"EDA - Number of SCR Peaks: {num_peaks}")
+            # Phasic peaks: count detected SCR peaks
+            num_peaks = np.sum(eda_signals["SCR_Peaks"] == 1)
+            print(f"\nEDA - Average Tonic: {avg_tonic:.4f} {eda_unit}, Average Phasic: {avg_phasic:.4f} {eda_unit}")
+            print(f"EDA - Number of SCR Peaks: {num_peaks}")
+            
+            # Check for low EDA signal (possible lead detachment)
+            # Convert to microsiemens for comparison
+            eda_unit_lower = eda_unit.lower()
+            if "µs" in eda_unit_lower or "us" in eda_unit_lower or "microsiemens" in eda_unit_lower:
+                # Already in microsiemens
+                tonic_microsiemens = avg_tonic
+            elif "ms" in eda_unit_lower or "millisiemens" in eda_unit_lower:
+                # Convert millisiemens to microsiemens
+                tonic_microsiemens = avg_tonic * 1000.0
+            elif "s" in eda_unit_lower and "micro" not in eda_unit_lower and "milli" not in eda_unit_lower:
+                # Assume siemens, convert to microsiemens
+                tonic_microsiemens = avg_tonic * 1000000.0
+            else:
+                # Unknown unit, assume already in microsiemens or use raw value
+                tonic_microsiemens = avg_tonic
+            
+            if tonic_microsiemens < 2.0:
+                print(Fore.RED + f"WARNING: EDA signal is below 2 microsiemens ({tonic_microsiemens:.4f} µS) - possible lead detachment!" + Style.RESET_ALL)
+        except Exception as e:
+            print(Fore.RED + f"\nERROR: EDA processing failed: {e}" + Style.RESET_ALL)
+            eda_signals = None
+            # Check raw signal even if processing failed
+            if eda is not None:
+                avg_raw_eda = np.mean(eda)
+                eda_unit_lower = eda_unit.lower()
+                if "µs" in eda_unit_lower or "us" in eda_unit_lower or "microsiemens" in eda_unit_lower:
+                    raw_microsiemens = avg_raw_eda
+                elif "ms" in eda_unit_lower or "millisiemens" in eda_unit_lower:
+                    raw_microsiemens = avg_raw_eda * 1000.0
+                elif "s" in eda_unit_lower and "micro" not in eda_unit_lower and "milli" not in eda_unit_lower:
+                    raw_microsiemens = avg_raw_eda * 1000000.0
+                else:
+                    raw_microsiemens = avg_raw_eda
+                
+                if raw_microsiemens < 2.0:
+                    print(Fore.RED + f"WARNING: EDA signal is below 2 microsiemens ({raw_microsiemens:.4f} µS) - possible lead detachment!" + Style.RESET_ALL)
+    else:
+        print(Fore.RED + f"\nERROR: EDA channel not found in data" + Style.RESET_ALL)
+        eda_signals = None
 
     # ECG: heart rate and quality
-    ecg_signals, ecg_info = nk.ecg_process(ecg, sampling_rate=sampling_frequency)
-    avg_hr = np.mean(ecg_signals["ECG_Rate"])
+    if ecg is not None:
+        try:
+            ecg_signals, ecg_info = nk.ecg_process(ecg, sampling_rate=sampling_frequency)
+            avg_hr = np.mean(ecg_signals["ECG_Rate"])
 
-    # ECG SNR: signal (R-peak amplitude) / noise (baseline RMS)
-    r_peaks = ecg_signals["ECG_R_Peaks"]
-    if np.sum(r_peaks) > 0:
-        signal_amplitude = np.mean(np.abs(ecg_signals["ECG_Clean"][r_peaks == 1]))
-        noise_rms = np.sqrt(np.mean(ecg_signals["ECG_Clean"][r_peaks == 0]**2))
-        snr_db = 20 * np.log10(signal_amplitude / noise_rms) if noise_rms > 0 else np.inf
-        snr_status = "high" if snr_db > 20 else "low"
-        print(f"ECG - Average HR: {avg_hr:.2f} bpm ({ecg_unit})")
-        print(f"ECG - SNR: {snr_db:.2f} dB ({snr_status})")
+            # ECG SNR: signal (R-peak amplitude) / noise (baseline RMS)
+            r_peaks = ecg_signals["ECG_R_Peaks"]
+            if np.sum(r_peaks) > 0:
+                signal_amplitude = np.mean(np.abs(ecg_signals["ECG_Clean"][r_peaks == 1]))
+                noise_rms = np.sqrt(np.mean(ecg_signals["ECG_Clean"][r_peaks == 0]**2))
+                snr_db = 20 * np.log10(signal_amplitude / noise_rms) if noise_rms > 0 else np.inf
+                snr_status = "high" if snr_db > 20 else "low"
+                print(f"ECG - Average HR: {avg_hr:.2f} bpm ({ecg_unit})")
+                print(f"ECG - SNR: {snr_db:.2f} dB ({snr_status})")
+            else:
+                print(f"ECG - Average HR: {avg_hr:.2f} bpm ({ecg_unit})")
+                print(Fore.RED + f"ECG - SNR: Could not calculate (no R-peaks detected)" + Style.RESET_ALL)
+        except Exception as e:
+            print(Fore.RED + f"ERROR: ECG processing failed: {e}" + Style.RESET_ALL)
+            ecg_signals = None
     else:
-        print(f"ECG - Average HR: {avg_hr:.2f} bpm ({ecg_unit})")
-        print(f"ECG - SNR: Could not calculate (no R-peaks detected)")
+        print(Fore.RED + f"ERROR: ECG channel not found in data" + Style.RESET_ALL)
+        ecg_signals = None
 
     # --- Create time array in minutes ---
     num_samples = data.shape[0]
     time_minutes = np.arange(num_samples) * samples_to_minutes
 
-    # --- Plot all three ---
-    plt.figure(figsize=(12,8))
+    # --- Plot available signals ---
+    plot_count = sum([eda is not None, ecg is not None, trigger is not None])
+    
+    if plot_count == 0:
+        print(Fore.RED + "\nWARNING: No signals available for plotting" + Style.RESET_ALL)
+    else:
+        plt.figure(figsize=(12, 8))
+        subplot_idx = 1
 
-    plt.subplot(3,1,1)
-    plt.plot(time_minutes, eda, lw=0.8)
-    plt.title("Raw EDA")
-    plt.xlabel("Time (minutes)")
-    plt.ylabel("Amplitude")
+        if eda is not None:
+            plt.subplot(plot_count, 1, subplot_idx)
+            plt.plot(time_minutes, eda, lw=0.8)
+            plt.title("Raw EDA")
+            plt.xlabel("Time (minutes)")
+            plt.ylabel("Amplitude")
+            subplot_idx += 1
+        else:
+            print(Fore.RED + "WARNING: EDA signal not available for plotting" + Style.RESET_ALL)
 
-    plt.subplot(3,1,2)
-    plt.plot(time_minutes, ecg, lw=0.8)
-    plt.title("Raw ECG")
-    plt.xlabel("Time (minutes)")
-    plt.ylabel("Amplitude")
+        if ecg is not None:
+            plt.subplot(plot_count, 1, subplot_idx)
+            plt.plot(time_minutes, ecg, lw=0.8)
+            plt.title("Raw ECG")
+            plt.xlabel("Time (minutes)")
+            plt.ylabel("Amplitude")
+            subplot_idx += 1
+        else:
+            print(Fore.RED + "WARNING: ECG signal not available for plotting" + Style.RESET_ALL)
 
-    plt.subplot(3,1,3)
-    plt.plot(time_minutes, trigger, lw=0.8)
-    plt.title("Trigger Signal")
-    plt.xlabel("Time (minutes)")
-    plt.ylabel("Amplitude")
+        if trigger is not None:
+            plt.subplot(plot_count, 1, subplot_idx)
+            plt.plot(time_minutes, trigger, lw=0.8)
+            plt.title("Trigger Signal")
+            plt.xlabel("Time (minutes)")
+            plt.ylabel("Amplitude")
+        else:
+            print(Fore.RED + "WARNING: Trigger signal not available for plotting" + Style.RESET_ALL)
 
-    plt.tight_layout()
-    plt.show()
+        plt.tight_layout()
+        plt.show()
 
 
 if __name__ == "__main__":
