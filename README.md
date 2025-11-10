@@ -19,9 +19,27 @@ cd C:\Users\<yourusername>
 cd C:\Users\john
 ```
 
+**📋 Getting the Git Repository URL:**
+
+To find the repository URL for cloning:
+
+- **GitHub**: Go to the repository page, click the green "Code" button, and copy the HTTPS or SSH URL (HTTPS is recommended for beginners)
+- **GitLab**: Navigate to the repository, click the blue "Clone" button, and copy the HTTPS or SSH URL
+- **Bitbucket**: Open the repository, click "Clone" in the sidebar, and copy the HTTPS or SSH URL
+- **Azure DevOps**: Go to the repository, click "Clone" in the top right, and copy the HTTPS or SSH URL
+
+The URL will typically look like:
+- HTTPS: `https://github.com/username/repository-name.git`
+- SSH: `git@github.com:username/repository-name.git`
+
+**This repository is located at:**
+```
+https://github.com/stefandup/CraneGame.git
+```
+
 Then clone the repository:
 ```powershell
-git clone <repository-url> CraneGame
+git clone https://github.com/stefandup/CraneGame.git CraneGame
 cd CraneGame
 ```
 
