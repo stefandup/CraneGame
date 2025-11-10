@@ -180,7 +180,11 @@ def main(FILE_PATH = r"C:\Users\stefan\Documents\Unreal Projects\UnrealPythonToo
         print(f"Error: File not found: {FILE_PATH}")
         return
     
-    df = pd.read_excel(FILE_PATH)
+    # Load CSV or Excel based on file extension
+    if FILE_PATH.lower().endswith('.csv'):
+        df = pd.read_csv(FILE_PATH)
+    else:
+        df = pd.read_excel(FILE_PATH)
     df.columns = df.columns.str.strip().str.replace(' ', '_').str.replace('[^a-zA-Z0-9_]', '', regex=True)
     
     print(f"Checking logfile {os.path.basename(FILE_PATH)}...")
