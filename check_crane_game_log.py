@@ -132,19 +132,19 @@ def check_slip_trial_slips(df):
 
 def check_trial_duration(df):
     """Calculate average trial duration and total duration in minutes."""
-    time_col = next((col for col in df.columns if col.lower() == 'time'), None)
+    #time_col = next((col for col in df.columns if col.lower() == 'time'), None)
     
-    if time_col is None:
-        print(f"Warning: Could not find Time column")
-        return False
+    #if time_col is None:
+    #    print(f"Warning: Could not find Time column")
+    #    return False
     
     # Calculate trial durations (difference between consecutive times)
-    trial_durations = df[time_col].diff().dropna()
+    trial_durations = df['TrialEndTime'] - df['TrialStartTime'] #df[time_col].diff().dropna()
     avg_trial_duration_sec = trial_durations.mean()
     avg_trial_duration_min = avg_trial_duration_sec / 60
     
     # Total duration is the maximum time value
-    total_duration_sec = df[time_col].max()
+    total_duration_sec = df['TrialEndTime'].iloc[-1]
     total_duration_min = total_duration_sec / 60
     
     print(f"Average trial duration: {avg_trial_duration_min:.2f} minutes ({avg_trial_duration_sec:.2f} seconds)")
@@ -190,6 +190,8 @@ def main(FILE_PATH = r"C:\Users\stefan\Documents\Unreal Projects\UnrealPythonToo
     df.columns = df.columns.str.strip().str.replace(' ', '_').str.replace('[^a-zA-Z0-9_]', '', regex=True)
     
     print(f"Checking logfile {os.path.basename(FILE_PATH)}...")
+
+    display(df)
 
     divider = "-" * 50
     print((Fore.GREEN + "OK" if check_nrslips_total(df) else Fore.RED + "ERROR") + Style.RESET_ALL)
