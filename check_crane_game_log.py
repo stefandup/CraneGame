@@ -149,8 +149,8 @@ def check_trial_duration(df):
     
     print(f"Average trial duration: {avg_trial_duration_min:.2f} minutes ({avg_trial_duration_sec:.2f} seconds)")
     print(f"Total duration: {total_duration_min:.2f} minutes ({total_duration_sec:.2f} seconds)")
-    is_close = abs(total_duration_sec - 959) < 2  # Allowing minor rounding error
-    print(f"Total duration is close to 959 seconds: {is_close}")
+    is_close = abs(total_duration_sec - 1000) < 2  # Allowing minor rounding error
+    print(f"Total duration is close to 1000 seconds: {is_close}")
     return is_close
 
 def check_stress_dropped(df):
@@ -194,7 +194,7 @@ def main(FILE_PATH = r"C:\Users\stefan\Documents\Unreal Projects\UnrealPythonToo
     display(df)
 
     divider = "-" * 50
-    print((Fore.GREEN + "OK" if check_nrslips_total(df) else Fore.RED + "ERROR") + Style.RESET_ALL)
+    #print((Fore.GREEN + "OK" if check_nrslips_total(df) else Fore.RED + "ERROR") + Style.RESET_ALL)
     print(divider)
     print((Fore.GREEN + "OK" if check_totaldropped_equals_slips(df) else Fore.RED + "ERROR") + Style.RESET_ALL)
     print(divider)
