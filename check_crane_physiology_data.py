@@ -61,8 +61,25 @@ def main(biopack_data_fn = r"C:\Users\stefan\Documents\Unreal Projects\UnrealPyt
 
     # Split preprocessing and analysis for method control
     eda_raw = eda_df['Value'].values
-    eda_cleaned = nk.eda_clean(eda_raw, sampling_rate=eda_sf,method="biosppy")
-    eda_decomposed = nk.eda_phasic(eda_cleaned, sampling_rate=eda_sf)
+    
+    eda_clean_methods = ['biosppy', 'neurokit']
+    fig, axs = plt.subplots(1, len(eda_clean_methods), figsize=(12, 4), sharey=True)
+    if len(eda_clean_methods) == 1:
+        axs = [axs]
+    eda_cleaned = {}
+    for i, method in enumerate(eda_clean_methods):
+        eda_cleaned[method] = nk.eda_clean(eda_raw, sampling_rate=eda_sf, method=method)
+        axs[i].plot(eda_time_stamps, eda_cleaned[method], label=f'EDA Cleaned ({method})')
+        axs[i].set_title(f'EDA Cleaned - {method}')
+        axs[i].set_xlabel('Time (s)')
+        axs[i].set_ylabel('Amplitude')
+        axs[i].legend()
+    plt.tight_layout()
+    plt.show()
+
+    # TODO investigate these methods!
+    
+    eda_decomposed = nk.eda_phasic(eda_cleaned['biosppy'], sampling_rate=eda_sf)
     
     eda_peak_methods = ['neurokit', 'gamboa2008', 'kim2004', 'vanhalem2020', 'nabian2018']
     peak_times_dict = {}
@@ -82,11 +99,15 @@ def main(biopack_data_fn = r"C:\Users\stefan\Documents\Unreal Projects\UnrealPyt
             print(f"Method: {m} failed with error: {e}")
             peak_times_dict[m] = None
     
-    print("-" * 10)
+    print("-" * 50)
 
 if __name__ == "__main__":
-    
+
     if len(sys.argv) > 1:
-        main(biopack_data_fn = sys.argv[1])
+        input_path = sys.argv[1]
+        # If the path is not absolute, resolve it relative to current working directory
+        if not os.path.isabs(input_path):
+            input_path = os.path.abspath(os.path.join(os.getcwd(), input_path))
+        main(input_path)
     else:
         main()
